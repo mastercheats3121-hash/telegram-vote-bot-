@@ -1,12 +1,13 @@
 import telebot
 from telebot import types
-from flask import Flask
-import threading
+import flask
 
 TOKEN = "8199761005:AAGy_LSo96NrrLeyox6jWjbwKHU26KS5Vy0"
 ADMIN_ID = 2109635883
+APP_URL = "https://telegram-vote-bot-q091.onrender.com"  # Sizning manzilingiz
 
 bot = telebot.TeleBot(TOKEN)
+server = flask.Flask(__name__)
 
 # Ma'lumotlar
 user_data = {}
@@ -106,6 +107,24 @@ def admin_action(call):
     if call.data.startswith("approve_"):
         bot.send_message(user_id, "✅ *So‘rovingiz tasdiqlandi!* 💵", parse_mode="Markdown")
         bot.send_message(ADMIN_ID, f"✔ Foydalanuvchi {user_id} tasdiqlandi.")
+    else:
+        bot.send_message(user_id, "❌ *So‘rovingiz rad etildi.*", parse_mode="Markdown")
+        bot.send_message(ADMIN_ID, f"🚫 Foydalanuvchi {user_id} rad etildi.")
+
+# Flask webhook qismi
+@server.route('/' + TOKEN, methods=['POST'])
+def getMessage():
+    bot.process_new_updates([telebot.types.Update.de_json(flask.request.stream.read().decode("utf-8"))])
+    return "OK", 200
+
+@server.route("/")
+def webhook():
+    bot.remove_webhook()
+    bot.set_webhook(url=APP_URL + "/" + TOKEN)
+    return "Webhook set", 200
+
+if __name__ == "__main__":
+    server.run(host="0.0.0.0", port=10000)        bot.send_message(ADMIN_ID, f"✔ Foydalanuvchi {user_id} tasdiqlandi.")
     else:
         bot.send_message(user_id, "❌ *So‘rovingiz rad etildi.*", parse_mode="Markdown")
         bot.send_message(ADMIN_ID, f"🚫 Foydalanuvchi {user_id} rad etildi.")
